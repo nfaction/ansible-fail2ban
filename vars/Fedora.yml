@@ -2,6 +2,7 @@
 
 packages:
   dependencies:
+    - sshd
     - fail2ban-firewalld
     - sendmail
   to_install:
