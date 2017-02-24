@@ -2,7 +2,7 @@
 
 packages:
   dependencies:
-    - sshd
+    - openssh-server
     - fail2ban-firewalld
     - sendmail
   to_install:
@@ -11,6 +11,7 @@ packages:
 fail2ban_settings:
   ignore_ip:
     - 127.0.0.1/8
+    - 192.168.1.0/24
   ssh_daemon: sshd
 
 fail2ban_jail_local:

@@ -91,7 +91,7 @@
 - name: start and enable fail2ban service
   service:
     name: '{{ item }}'
-    state: started
+    state: restarted
     enabled: yes
   with_items:
     - '{{ fail2ban_settings.ssh_daemon }}'
