@@ -1,11 +1,113 @@
-- include: centos-setup.yml
-  when: ansible_distribution == "CentOS" and ansible_distribution_major_version < '7'
-  tags: centos5-and-6
+---
 
-- include: centos7-setup.yml
-  when: ansible_distribution == "CentOS" and ansible_distribution_major_version == '7'
-  tags: centos7
+- name: gather os specific variables
+  include_vars: "{{ item }}"
+  with_first_found:
+    - '{{ ansible_distribution }}-{{ ansible_distribution_major_version}}.yml'
+    - '{{ ansible_distribution }}.yml'
+    - '{{ ansible_os_family }}.yml'
+  tags:
+    - vars
+    - install
+    - config
+    - service
 
-- include: ubuntu-setup.yml
-  when: ansible_distribution == "Ubuntu"
-  tags: ubuntu
+- name: Install required dependencies
+  package:
+    name: '{{ item }}'
+    state: latest
+  become: yes
+  with_items: '{{ packages.dependencies }}'
+  tags:
+    - install
+
+- name: Install required packages
+  package:
+    name: '{{ item }}'
+    state: latest
+  become: yes
+  with_items: '{{ packages.to_install }}'
+  tags:
+    - install
+
+- name: check to see if jail.local exists
+  stat:
+    path: /etc/fail2ban/jail.local
+  register: jail_local
+  tags:
+    - copy
+
+- name: copy jail.conf to jail.local
+  copy:
+    src: /etc/fail2ban/jail.conf
+    dest: /etc/fail2ban/jail.local
+    remote_src: True
+  when: not jail_local.stat.exists
+
+- name: configure jail.local
+  ini_file:
+    dest: /etc/fail2ban/jail.local
+    section: '{{ item.0.section }}'
+    option: '{{ item.1.option }}'
+    value: '{{ item.1.value }}'
+    backup: yes
+  with_subelements:
+    - '{{ fail2ban_jail_local }}'
+    - options
+  tags:
+    - config
+    - service
+
+- name: create list of IPs to ignore
+  set_fact:
+    ignored_ips: "{{ fail2ban_settings.ignore_ip | join(' ') }}"
+  tags:
+    - config
+    - service
+
+- name: configure ignored ips in jail.local
+  ini_file:
+    dest: /etc/fail2ban/jail.local
+    section: DEFAULT
+    option: ignoreip
+    value: '{{ ignored_ips }}'
+    backup: yes
+  tags:
+    - config
+    - service
+
+- name: set up fail2ban files and dir
+  file:
+    path: '{{ item.path }}'
+    state: '{{ item.state }}'
+    mode: '{{ item.mode }}'
+  with_items:
+    - { path: '/var/log/fail2ban.log', state: 'touch', mode: '0644' }
+    - { path: '/var/run/fail2ban', state: 'directory', mode: '0755' }
+  tags:
+    - config
+    - service
+
+- name: start and enable fail2ban service
+  service:
+    name: '{{ item }}'
+    state: restarted
+    enabled: yes
+  with_items:
+    - '{{ fail2ban_settings.ssh_daemon }}'
+    - sendmail
+    - fail2ban
+  tags:
+    - service
+
+# - include: centos-setup.yml
+#   when: ansible_distribution == "CentOS" and ansible_distribution_major_version < '7'
+#   tags: centos5-and-6
+
+# - include: centos7-setup.yml
+#   when: ansible_distribution == "CentOS" and ansible_distribution_major_version == '7'
+#   tags: centos7
+
+# - include: ubuntu-setup.yml
+#   when: ansible_distribution == "Ubuntu"
+#   tags: ubuntu

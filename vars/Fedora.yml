@@ -1,0 +1,30 @@
+---
+
+packages:
+  dependencies:
+    - openssh-server
+    - fail2ban-firewalld
+    - sendmail
+  to_install:
+    - fail2ban
+
+fail2ban_settings:
+  ignore_ip:
+    - 127.0.0.1/8
+    - 192.168.1.0/24
+  ssh_daemon: sshd
+
+fail2ban_jail_local:
+  - name: default
+    section: DEFAULT
+    options:
+      - { option: 'bantime', value: '3600' }
+      - { option: 'sender', value: 'fail2ban@example.com' }
+      - { option: 'destemail', value: 'root' }
+      - { option: 'action', value: '%(action_mwl)s' }
+      - { option: 'banaction', value: 'firewallcmd-ipset' }
+      - { option: 'backend', value: 'systemd' }
+  - name: sshd
+    section: sshd
+    options:
+      - { option: 'enabled', value: 'true' }
