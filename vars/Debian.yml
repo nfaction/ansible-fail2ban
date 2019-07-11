@@ -1,10 +1,11 @@
 ---
 
+# https://gist.github.com/Telling/7fd4bc5ee4caaff88f4b
+
 packages:
   dependencies:
     - openssh-server
-    - fail2ban-firewalld
-    - sendmail
+    - exim4
   to_install:
     - fail2ban
 
@@ -12,7 +13,7 @@ fail2ban_settings:
   ignore_ip:
     - 127.0.0.1/8
     - 192.168.1.0/24
-  ssh_daemon: sshd
+  ssh_daemon: ssh
 
 fail2ban_jail_local:
   - name: default
@@ -23,10 +24,21 @@ fail2ban_jail_local:
       - { option: 'sender', value: 'fail2ban@example.com' }
       - { option: 'destemail', value: 'root' }
       - { option: 'action', value: '%(action_mwl)s' }
-      - { option: 'banaction', value: 'firewallcmd-ipset' }
-      - { option: 'backend', value: 'systemd' }
+      - { option: 'banaction', value: 'ufw' }
+      - { option: 'mta', value: 'sendmail' }
+      - { option: 'backend', value: 'auto' }
   - name: sshd
     file: "/etc/fail2ban/jail.local"
     section: sshd
     options:
       - { option: 'enabled', value: 'true' }
+      # - name: ufw
+      #   file: "/etc/fail2ban/action.d/ufw.conf"
+      #   section: Definition
+      #   options:
+      #     - { option: 'actionban', value: 'ufw insert 1 deny from <ip> to any' }
+      #     - { option: 'actionunban', value: 'ufw delete deny from <ip> to any' }
+
+services_to_manage:
+  - '{{ fail2ban_settings.ssh_daemon }}'
+  - fail2ban

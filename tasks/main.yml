@@ -15,8 +15,8 @@
 - name: Install required dependencies
   package:
     name: '{{ item }}'
-    state: latest
-  become: yes
+    state: present
+  become: true
   with_items: '{{ packages.dependencies }}'
   tags:
     - install
@@ -24,8 +24,8 @@
 - name: Install required packages
   package:
     name: '{{ item }}'
-    state: latest
-  become: yes
+    state: present
+  become: true
   with_items: '{{ packages.to_install }}'
   tags:
     - install
@@ -41,16 +41,16 @@
   copy:
     src: /etc/fail2ban/jail.conf
     dest: /etc/fail2ban/jail.local
-    remote_src: True
+    remote_src: true
   when: not jail_local.stat.exists
 
 - name: configure jail.local
   ini_file:
-    dest: /etc/fail2ban/jail.local
+    dest: '{{ item.0.file }}'
     section: '{{ item.0.section }}'
     option: '{{ item.1.option }}'
     value: '{{ item.1.value }}'
-    backup: yes
+    backup: true
   with_subelements:
     - '{{ fail2ban_jail_local }}'
     - options
@@ -71,7 +71,7 @@
     section: DEFAULT
     option: ignoreip
     value: '{{ ignored_ips }}'
-    backup: yes
+    backup: true
   tags:
     - config
     - service
@@ -92,22 +92,7 @@
   service:
     name: '{{ item }}'
     state: restarted
-    enabled: yes
-  with_items:
-    - '{{ fail2ban_settings.ssh_daemon }}'
-    - sendmail
-    - fail2ban
+    enabled: true
+  with_items: "{{ services_to_manage }}"
   tags:
     - service
-
-# - include: centos-setup.yml
-#   when: ansible_distribution == "CentOS" and ansible_distribution_major_version < '7'
-#   tags: centos5-and-6
-
-# - include: centos7-setup.yml
-#   when: ansible_distribution == "CentOS" and ansible_distribution_major_version == '7'
-#   tags: centos7
-
-# - include: ubuntu-setup.yml
-#   when: ansible_distribution == "Ubuntu"
-#   tags: ubuntu

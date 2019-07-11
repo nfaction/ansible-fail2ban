@@ -1,2 +1,16 @@
+---
+
+SSH_PORT: '22'
+BANTIME: '1800'
+MAX_RETRY: '3'
+DESTEMAIL: 'root@localhost'
+SENDERNAME: 'Fail2Ban'
+F2B_ACTION: 'action_'
+
 F2B_IGNOREIP:
   - 127.0.0.1/8
+
+services_to_manage:
+  - '{{ fail2ban_settings.ssh_daemon }}'
+  - sendmail
+  - fail2ban
