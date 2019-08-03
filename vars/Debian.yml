@@ -2,18 +2,13 @@
 
 # https://gist.github.com/Telling/7fd4bc5ee4caaff88f4b
 
-packages:
-  dependencies:
-    - openssh-server
-    - exim4
-  to_install:
-    - fail2ban
+packages_dependencies:
+  - openssh-server
+  - exim4
+packages_to_install:
+  - fail2ban
 
-fail2ban_settings:
-  ignore_ip:
-    - 127.0.0.1/8
-    - 192.168.1.0/24
-  ssh_daemon: ssh
+ssh_service: ssh
 
 fail2ban_jail_local:
   - name: default
@@ -40,5 +35,5 @@ fail2ban_jail_local:
       #     - { option: 'actionunban', value: 'ufw delete deny from <ip> to any' }
 
 services_to_manage:
-  - '{{ fail2ban_settings.ssh_daemon }}'
+  - '{{ ssh_service }}'
   - fail2ban

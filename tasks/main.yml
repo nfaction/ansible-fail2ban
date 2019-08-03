@@ -3,7 +3,7 @@
 - name: gather os specific variables
   include_vars: "{{ item }}"
   with_first_found:
-    - '{{ ansible_distribution }}-{{ ansible_distribution_major_version}}.yml'
+    - '{{ ansible_distribution }}-{{ ansible_distribution_major_version }}.yml'
     - '{{ ansible_distribution }}.yml'
     - '{{ ansible_os_family }}.yml'
   tags:
@@ -17,7 +17,7 @@
     name: '{{ item }}'
     state: present
   become: true
-  with_items: '{{ packages.dependencies }}'
+  with_items: '{{ packages_dependencies }}'
   tags:
     - install
 
@@ -26,7 +26,7 @@
     name: '{{ item }}'
     state: present
   become: true
-  with_items: '{{ packages.to_install }}'
+  with_items: '{{ packages_to_install }}'
   tags:
     - install
 
@@ -58,19 +58,12 @@
     - config
     - service
 
-- name: create list of IPs to ignore
-  set_fact:
-    ignored_ips: "{{ fail2ban_settings.ignore_ip | join(' ') }}"
-  tags:
-    - config
-    - service
-
 - name: configure ignored ips in jail.local
   ini_file:
     dest: /etc/fail2ban/jail.local
     section: DEFAULT
     option: ignoreip
-    value: '{{ ignored_ips }}'
+    value: "{{ fail2ban_ignore_ips  | join(' ') }}"
     backup: true
   tags:
     - config
@@ -82,6 +75,7 @@
     state: '{{ item.state }}'
     mode: '{{ item.mode }}'
   with_items:
+    - { path: '/var/log/auth.log', state: 'touch', mode: '0644' }
     - { path: '/var/log/fail2ban.log', state: 'touch', mode: '0644' }
     - { path: '/var/run/fail2ban', state: 'directory', mode: '0755' }
   tags:
