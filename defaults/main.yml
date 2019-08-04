@@ -3,20 +3,76 @@
 ssh_port: 22
 ssh_service: ssh
 
-BANTIME: '1800'
-MAX_RETRY: '3'
-DESTEMAIL: 'root@localhost'
-SENDERNAME: 'Fail2Ban'
-F2B_ACTION: 'action_'
+fail2ban_jail_config: "/etc/fail2ban/jail.local"
+fail2ban_example_jail_config: "/etc/fail2ban/jail.conf"
 
-F2B_IGNOREIP:
-  - 127.0.0.1/8
+fail2ban_files_dirs: []
 
+fail2ban_files_to_touch:
+  - name: auth.log
+    path: "/var/log/auth.log"
+    mode: "0644"
+  - name: fail2ban.log
+    path: "/var/log/fail2ban.log"
+    mode: "0644"
+  - name: fail2ban run directory
+    path: "/var/run/fail2ban"
+    mode: "0755"
+
+fail2ban_bantime: 3600
+fail2ban_max_retries: 3
+fail2ban_email_sender: "fail2ban@example.com"
+fail2ban_email_destination: "root"
+fail2ban_fw_banaction: "iptables"
+fail2ban_mta: "sendmail"
+fail2ban_backend: "auto"
 fail2ban_ignore_ips:
   - 127.0.0.1/8
-  - 192.168.1.0/24
+
+fail2ban_jail_local:
+  - name: default
+    file: "{{ fail2ban_jail_config }}"
+    section: DEFAULT
+    options:
+      - name: ban time
+        option: "bantime"
+        value: "{{ fail2ban_bantime }}"
+      - name: max retries
+        option: "maxretry"
+        value: "{{ fail2ban_max_retries }}"
+      - name: sender email
+        option: "sender"
+        value: "{{ fail2ban_email_sender }}"
+      - name: destination email
+        option: "destemail"
+        value: "{{ fail2ban_email_destination }}"
+      - name: fail2ban action
+        option: "action"
+        value: "%(action_mwl)s"
+      - name: ban action
+        option: "banaction"
+        value: "{{ fail2ban_fw_banaction }}"
+      - name: selected mail transfer agent
+        option: "mta"
+        value: "{{ fail2ban_mta }}"
+      - name: back end
+        option: "backend"
+        value: "auto"
+  - name: fail2ban ignored IPs
+    file: "{{ fail2ban_jail_config }}"
+    section: DEFAULT
+    options:
+      - name: use this jail
+        option: "ignoreip"
+        value: "{{ fail2ban_ignore_ips  | join(' ') }}"
+  - name: sshd
+    file: "{{ fail2ban_jail_config }}"
+    section: sshd
+    options:
+      - name: use this jail
+        option: "enabled"
+        value: "true"
 
 services_to_manage:
-  - '{{ fail2ban_settings.ssh_daemon }}'
-  - sendmail
+  - "{{ ssh_service }}"
   - fail2ban

@@ -3,9 +3,9 @@
 - name: gather os specific variables
   include_vars: "{{ item }}"
   with_first_found:
-    - '{{ ansible_distribution }}-{{ ansible_distribution_major_version }}.yml'
-    - '{{ ansible_distribution }}.yml'
-    - '{{ ansible_os_family }}.yml'
+    - "{{ ansible_distribution }}-{{ ansible_distribution_major_version }}.yml"
+    - "{{ ansible_distribution }}.yml"
+    - "{{ ansible_os_family }}.yml"
   tags:
     - vars
     - install
@@ -14,79 +14,83 @@
 
 - name: Install required dependencies
   package:
-    name: '{{ item }}'
+    name: "{{ item }}"
     state: present
   become: true
-  with_items: '{{ packages_dependencies }}'
+  with_items:
+    - "{{ packages_dependencies }}"
   tags:
     - install
 
 - name: Install required packages
   package:
-    name: '{{ item }}'
+    name: "{{ item }}"
     state: present
   become: true
-  with_items: '{{ packages_to_install }}'
+  with_items:
+    - "{{ packages_to_install }}"
   tags:
     - install
 
 - name: check to see if jail.local exists
   stat:
-    path: /etc/fail2ban/jail.local
-  register: jail_local
+    path: "{{ fail2ban_jail_config }}"
+  register: jail_config
   tags:
     - copy
 
-- name: copy jail.conf to jail.local
-  copy:
-    src: /etc/fail2ban/jail.conf
-    dest: /etc/fail2ban/jail.local
-    remote_src: true
-  when: not jail_local.stat.exists
-
-- name: configure jail.local
-  ini_file:
-    dest: '{{ item.0.file }}'
-    section: '{{ item.0.section }}'
-    option: '{{ item.1.option }}'
-    value: '{{ item.1.value }}'
-    backup: true
-  with_subelements:
-    - '{{ fail2ban_jail_local }}'
-    - options
-  tags:
-    - config
-    - service
-
-- name: configure ignored ips in jail.local
-  ini_file:
-    dest: /etc/fail2ban/jail.local
-    section: DEFAULT
-    option: ignoreip
-    value: "{{ fail2ban_ignore_ips  | join(' ') }}"
-    backup: true
-  tags:
-    - config
-    - service
-
 - name: set up fail2ban files and dir
   file:
-    path: '{{ item.path }}'
-    state: '{{ item.state }}'
-    mode: '{{ item.mode }}'
+    path: "{{ item.path }}"
+    state: "{{ item.state }}"
+    mode: "{{ item.mode }}"
   with_items:
-    - { path: '/var/log/auth.log', state: 'touch', mode: '0644' }
-    - { path: '/var/log/fail2ban.log', state: 'touch', mode: '0644' }
-    - { path: '/var/run/fail2ban', state: 'directory', mode: '0755' }
+    - "{{ fail2ban_files_dirs }}"
   tags:
     - config
-    - service
 
-- name: start and enable fail2ban service
-  service:
-    name: '{{ item }}'
-    state: restarted
-    enabled: true
-  with_items: "{{ services_to_manage }}"
+- name: only touch files if they don't exist
+  stat:
+    path: "{{ item.path }}"
+  register: files_to_touch
+  with_items:
+    - "{{ fail2ban_files_to_touch }}"
+
+- debug: var=files_to_touch
+
+- name: touch any required fail2ban files
+  file:
+    path: "{{ item.item.path }}"
+    mode: "{{ item.item.mode }}"
+    state: touch
+  with_items:
+    - "{{ files_to_touch.results }}"
+  when:
+    - not item.stat.exists
   tags:
-    - service
+    - config
+
+- name: copy jail.conf to jail.local
+  copy:
+    src: "{{ fail2ban_example_jail_config }}"
+    dest: "{{ fail2ban_jail_config }}"
+    remote_src: true
+  when:
+    - not jail_config.stat.exists
+  tags:
+    - config
+
+- name: configure fail2ban jail
+  ini_file:
+    dest: "{{ item.0.file }}"
+    section: "{{ item.0.section }}"
+    option: "{{ item.1.option }}"
+    value: "{{ item.1.value }}"
+    backup: true
+  with_subelements:
+    - "{{ fail2ban_jail_local }}"
+    - options
+  notify:
+    - start and enable fail2ban services
+  tags:
+    - config

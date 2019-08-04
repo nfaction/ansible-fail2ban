@@ -1,0 +1,13 @@
+---
+
+packages_dependencies:
+  - openssh-server
+  - fail2ban-firewalld
+  - sendmail
+packages_to_install:
+  - fail2ban
+
+ssh_service: sshd
+
+fail2ban_fw_banaction: "firewallcmd-ipset"
+fail2ban_backend: "systemd"

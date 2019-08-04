@@ -1,0 +1,10 @@
+---
+
+- name: start and enable fail2ban services
+  service:
+    name: '{{ item }}'
+    state: restarted
+    enabled: true
+  with_items: "{{ services_to_manage }}"
+  tags:
+    - service
