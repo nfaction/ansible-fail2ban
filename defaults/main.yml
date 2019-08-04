@@ -1,5 +1,9 @@
 ---
 
+# Workarounds for running the playbook in this role
+ansible_root_dir: "{{ playbook_dir }}"
+ansible_root_dir_roles_path: "{{ ansible_root_dir }}/roles"
+
 ssh_port: 22
 ssh_service: ssh
 

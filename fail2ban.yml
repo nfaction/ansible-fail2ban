@@ -1,0 +1,19 @@
+---
+#
+# Usage:
+#
+#   ansible-playbook ansible-fail2ban/fail2ban.yml -i <fail2ban-hosts-file> -vvv
+#
+- name: configure fail2ban
+  hosts: all
+  vars: []
+  pre_tasks:
+    - name: set playbook dir when running this playbook here
+      set_fact:
+        ansible_root_dir: "{{ playbook_dir | regex_replace('/roles/ansible-fail2ban', '') }}"
+      when: "'/roles/ansible-fail2ban' in playbook_dir"
+      tags:
+        - fail2ban
+
+  roles:
+    - role: ansible-fail2ban
