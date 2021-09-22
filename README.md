@@ -1,6 +1,6 @@
 # ansible-fail2ban
 
-[![Build Status](https://travis-ci.org/nfaction/ansible-fail2ban.svg?branch=master)](https://travis-ci.org/nfaction/ansible-fail2ban)
+[![Ansible Molecule Test Matrix](https://github.com/nfaction/ansible-fail2ban/actions/workflows/molecule.yml/badge.svg)](https://github.com/nfaction/ansible-fail2ban/actions/workflows/molecule.yml)
 
 ## References
 * <https://fedoraproject.org/wiki/Fail2ban_with_FirewallD>
